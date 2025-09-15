@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>博客系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-size: cover;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.75);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-top: 2rem;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+        }
+        .card {
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            background: rgba(255, 255, 255, 0.85);
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        }
+        .comments { list-style: none; padding-left: 0; }
+        .loading {
+            text-align: center;
+            font-weight: bold;
+            margin: 1rem 0;
+        }
+        .no-comment{
+            color: #86b7fe!important;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <h2 class="mb-4">博客系统<a style="margin-left: 12px;font-size: 14px;" href="/post_create?userId={{.UserID}}">发表文章</a></h2>
+
+    <!-- 用户名称列表 -->
+    <div class="mb-4">
+        <strong>用户列表：</strong>
+        {{range .UserNameList}}
+        <a href="/?userId={{.ID}}"
+           class="badge me-1 {{if eq .ID $.UserID}}bg-primary{{else}}bg-light text-dark{{end}}">
+            {{.Name}}
+        </a>
+        {{end}}
+    </div>
+    <div class="mb-4">
+        <strong>文章评论数TOP1：</strong>
+        <ul>
+            {{range .MostPost}}
+            <li style="margin-right: 12px"><a href="/post_most_comments">{{.Title}}（{{.Author}}）</a></li>
+            {{end}}
+        </ul>
+    </div>
+
+    <div id="loading" class="loading" style="display:none;">加载中...</div>
+    <div id="resultArea"></div>
+
+</div>
+
+<script>
+    const currentUserId = {{.UserID}}
+
+    const resultArea = document.getElementById("resultArea");
+    const loading = document.getElementById("loading");
+
+    function showLoading(){loading.style.display="block";}
+    function hideLoading(){loading.style.display="none";}
+
+    function createPostCard(post){
+        const postDiv = document.createElement("div");
+        postDiv.className = "card";
+        postDiv.dataset.postId = post.id;
+
+        // const title = document.createElement("h5");
+        // title.textContent = post.title + " (评论数: " + post.comment_count + ")";
+        // postDiv.appendChild(title);
+        const titleDiv = document.createElement("div");
+        titleDiv.classList.add("card", "p-3", "shadow-sm");
+        // 创建 h5 容器，使用 flex 布局
+        const titleContainer = document.createElement("h5");
+        titleContainer.style.display = "flex";
+        titleContainer.style.justifyContent = "space-between"; // 左右两端对齐
+        titleContainer.style.alignItems = "center"; // 垂直居中
+        // 左侧：文章标题 + 评论数
+        const titleText = document.createElement("span");
+        titleText.textContent = post.title + " (评论数: " + post.comment_count + ")";
+        titleContainer.appendChild(titleText);
+        // 右侧：删除按钮
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "btn btn-sm btn-danger"; // 小红色按钮
+        deleteBtn.textContent = "删除";
+        deleteBtn.onclick = function() {
+            if (confirm("确定要删除这篇文章吗？")) {
+                // 调用删除文章接口
+                fetch(`/api/post_delete?id=${post.id}`, { method: "DELETE" })
+                    .then(res => {
+                        if (res.ok) {
+                            window.location.href="/?userId="+currentUserId
+                        } else {
+                            alert("删除失败");
+                        }
+                    })
+                    .catch(err => alert("请求出错: " + err));
+            }
+        };
+        titleContainer.appendChild(deleteBtn);
+        // 将 h5 容器添加到卡片
+        titleDiv.appendChild(titleContainer);
+        postDiv.appendChild(titleDiv)
+
+        const content = document.createElement("p");
+        content.textContent = post.content;
+        postDiv.appendChild(content);
+
+        const updatedAt = document.createElement("small");
+        updatedAt.className = "text-muted d-block mb-1";
+        updatedAt.textContent = "更新时间: " + post.updated_at;
+        postDiv.appendChild(updatedAt);
+
+        if(post.comment_status=='有评论'){
+            const small = document.createElement("small");
+            small.className = "text-muted";
+            small.textContent = "评论: "
+            postDiv.appendChild(small);
+
+            if(post.comments && post.comments.length>0){
+                const ul = document.createElement("ul");
+                ul.className = "comments";
+                post.comments.forEach(c=>{
+                    const li=document.createElement("li");
+                    li.textContent=c.content + " （" + c.updated_at + "）";
+                    ul.appendChild(li);
+                });
+                postDiv.appendChild(ul);
+            }
+        } else {
+            const small = document.createElement("small");
+            small.className = "text-muted no-comment";
+            small.textContent = post.comment_status
+            postDiv.appendChild(small);
+        }
+
+        const form=document.createElement("form");
+        form.className="comment-form mt-2";
+        form.innerHTML=`
+            <input type="text" class="form-control form-control-sm mb-1" name="content" placeholder="输入评论..." required>
+            <button type="submit" class="btn btn-sm btn-primary">发表评论</button>
+        `;
+        form.addEventListener("submit",(e)=>submitComment(e,postDiv));
+        postDiv.appendChild(form);
+
+        return postDiv;
+    }
+
+    function renderUserPosts(data){
+        resultArea.innerHTML="";
+        const userCard=document.createElement("div");
+        userCard.className="card";
+
+        const userTitle=document.createElement("h4");
+        userTitle.textContent="用户: "+data.name+" ("+data.email+"，文章数："+data.post_count+")";
+        userCard.appendChild(userTitle);
+
+        data.posts.forEach(post=>{
+            const postDiv=createPostCard(post);
+            userCard.appendChild(postDiv);
+        });
+
+        resultArea.appendChild(userCard);
+    }
+
+    function submitComment(e, postDiv){
+        e.preventDefault();
+        const input = e.target.querySelector('input[name="content"]');
+        const content = input.value.trim();
+        if(!content) return;
+        const postId = postDiv.dataset.postId;
+        showLoading();
+        fetch('/api/comment?userId'+currentUserId,{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({postId: Number(postId), content: content, userId: currentUserId})
+        })
+            .then(res=>res.json())
+            .then(()=>{window.location.href="/?userId="+currentUserId})
+            .catch(err=>console.error(err))
+            .finally(()=>hideLoading());
+    }
+
+    function init(){
+        showLoading();
+        fetch("/api/user_posts?userId="+currentUserId)
+            .then(res=>res.json())
+            .then(data=>renderUserPosts(data))
+            .catch(err=>console.error(err))
+            .finally(()=>hideLoading());
+    }
+
+    window.onload=init;
+</script>
+
+</body>
+</html>
