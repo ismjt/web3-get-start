@@ -1,0 +1,134 @@
+{{define "post/modify.html"}}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Post - Modify</title>
+
+    <!-- Bootstrap Core CSS -->
+    <link href="/static/lib/bootstrap/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link href="/static/css/blog-post.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/base.css">
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+    <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+    <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- jQuery -->
+    <script src="/static/lib/jquery/jquery.min.js"></script>
+
+    <!-- Bootstrap Core JavaScript -->
+    <script src="/static/lib/bootstrap/bootstrap.min.js"></script>
+
+    <!-- font awesome -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/latest/css/font-awesome.min.css" />
+    <!-- simplemde -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css" />
+    <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
+
+    <!-- code syntax highlighting -->
+    <script src="https://cdn.jsdelivr.net/highlight.js/latest/highlight.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/highlight.js/latest/styles/github.min.css" />
+
+    <!-- x-editable (bootstrap version) -->
+    <link href="https://cdn.jsdelivr.net/npm/x-editable@1.5.1/dist/bootstrap3-editable/css/bootstrap-editable.css" rel="stylesheet"/>
+    <script src="https://cdn.jsdelivr.net/npm/x-editable@1.5.1/dist/bootstrap3-editable/js/bootstrap-editable.min.js"></script>
+
+    <!-- InlineAttachment -->
+    <script src="/static/lib/InlineAttachment/inline-attachment.js"></script>
+    <script src="/static/lib/InlineAttachment/codemirror-4.inline-attachment.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            var simplemde = new SimpleMDE({
+                element: document.getElementById("demo"),
+                autofocus: false,
+                forceSync: true,
+                hideIcons: ["guide"],
+                indentWithTabs: false,
+                tabSize: 4,
+                spellChecker: false,
+                renderingConfig: {
+                    singleLineBreaks: true,
+                    codeSyntaxHighlighting: true,
+                },
+                showIcons: ["code"],
+                status: false,
+            });
+
+            // inlineAttachment
+            inlineAttachment.editors.codemirror4.attach(simplemde.codemirror, {
+                uploadUrl: "/admin/upload",
+                jsonFieldName:"url",
+                onFileUploadResponse: function(xhr) {
+                    var result = JSON.parse(xhr.responseText),
+                        filename = result[this.settings.jsonFieldName];
+
+                    if (result && filename) {
+                        var newValue;
+                        if (typeof this.settings.urlText === 'function') {
+                            newValue = this.settings.urlText.call(this, filename, result);
+                        } else {
+                            newValue = this.settings.urlText.replace(this.filenameTag, filename);
+                        }
+                        var text = this.editor.getValue().replace(this.lastValue, newValue);
+                        this.editor.setValue(text);
+                        this.settings.onFileUploaded.call(this, filename);
+                    }
+                    return false;
+                }
+            });
+
+            $('#postSave').click(function(event){
+                event.preventDefault();
+                $("#demo").text(simplemde.value());
+                $("#postForm").submit();
+            });
+
+        });
+
+        function deleteTag(element){
+            $(element).parent().remove();
+        }
+    </script>
+
+</head>
+
+<body>
+
+{{template "navigation.html" .}}
+
+<div class="container">
+
+    <div class="col-sm-offset-1 col-sm-10">
+
+        <a id="postSave" class="btn btn-primary" style="">Save Post</a>
+        <a href="/admin/post" class="btn btn-default" style="float: right; padding-left: 15px;margin-bottom: 16px;margin-right: 16px;font-size: 12px;">返回列表</a>
+
+        <!-- create or update a article -->
+        <form action="/admin/post/{{.post.ID}}/edit" method="post" id="postForm" class="form-group">
+            <input name="title" type="text" class="form-control" placeholder="Title" value="{{.post.Title}}"/><br/>
+            <textarea id="demo" name="content">{{.post.Content}}</textarea><br/>
+        </form>
+    </div>
+
+</div>
+
+{{template "footer.html"}}
+
+</body>
+
+</html>
+{{end}}

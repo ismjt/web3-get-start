@@ -1,0 +1,22 @@
+addr = ':8090'
+title = 'Personal blog'
+session_secret = 'asdf89sd7f98a9sd8f78asd'
+domain = '[!!]'
+file_server = 'local'
+notify_emails = ''
+page_size = 10
+public = 'static'
+views = 'views/**/*'
+
+[database]
+dialect = 'sqlite'
+dsn = 'personal_blog.db'
+
+[[navigators]]
+title = 'Posts'
+url = '/index'
+target = ''
+
+[jwt]
+sk = '776df678g6hd78f6g8h7df8gdh'
+issuer = 'personal-blog-server'
