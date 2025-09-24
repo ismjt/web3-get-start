@@ -103,14 +103,15 @@ create index idx_comments_deleted_at
 ```
 
 # 7、用户认证与授权
-* JWT（JSON Web Token）：实现用户认证和授权，JWT的生成与验证在helpers/jwt.go文件内，Claims声明信息为：
+* JWT（JSON Web Token）：实现用户认证和授权，组件使用github.com/golang-jwt/jwt/v5，JWT的生成与验证在helpers/jwt.go文件内，Claims声明信息为：
 ```go
 type MyClaims struct {
-	UserID   uint   `json:"user_id"`
-	Username string `json:"username"`
-	jwt.StandardClaims
+    UserID   uint   `json:"user_id"`
+    Username string `json:"username"`
+    jwt.RegisteredClaims
 }
 ```
+同时实现Claims自定义校验方法Validate()
 * Session Store：通过会话机制与客户端进行交互，主要用于认证数据交互，基于cookie方式存储，main.go文件中的关键代码为：
 ```go
 func setSessions(router *gin.Engine) {
