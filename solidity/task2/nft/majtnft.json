@@ -1,0 +1,16 @@
+{
+  "name": "Majt First NFT",
+  "description": "This is my first test NFT on Ethereum Sepolia",
+  "image": "ipfs://bafybeigl5w7qqzwtkyc5dpt2j6akufp7gs4jr5ictbzuhpiwasrhk4tdoa",
+  "external_url": "https://storage.googleapis.com/opensea-prod.appspot.com/puffs/3.png",
+  "attributes": [
+    {
+      "trait_type": "Background",
+      "value": "Blue"
+    },
+    {
+      "trait_type": "Level",
+      "value": 5
+    }
+  ]
+}
