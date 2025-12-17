@@ -1,0 +1,7 @@
+{
+  "MajtNFTModule#MajtDutchNFT": "0xb3Cd2F5d2BE278b090115F2Ac291cc9ae5cE6653",
+  "NFTAuctionModule#NFTAuction": "0xC459b124657E668952fc0550722dB4b3767CEF75",
+  "AuctionFactoryModule#AuctionFactory": "0x95ab504AA0Faf75ea3f0d0A7A519c1f36225a3eD",
+  "PriceOracleModule#PriceOracle": "0x7cAa536A5FFCC2a2b12044B8f3CA3b892cBCC76b",
+  "AuctionFactoryModule#UUPSProxy": "0x782d13f3874eB51e2200e0a12B4d80A9C9D29177"
+}
